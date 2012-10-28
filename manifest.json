@@ -9,6 +9,12 @@
     "128": "icon128.png"
   },
   "permissions": [
-    "http://www.omdbapi.com"
+    "http://www.omdbapi.com/"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.imdb.com/*"],
+      "js": ["scripts/libs/jquery.min.js", "scripts/page.js"]
+    }
   ]
 }
