@@ -31,7 +31,9 @@ var addRatingToMovieRow = function(row, callback) {
 };
 $.fn.loadPageRatings = function() {
   $(this).each(function(i, content) {
-    var rows = $(this).find('.filmo-row');
+    // Only target main filmography section for both having a more relevant
+    // actor average and making fewer requests
+    var rows = $(this).find('#filmography').children().eq(1).find('.filmo-row');
     var ratingSum = 0;
     var ratingCount = 0;
     // Since gathering each rating requires an asynchronous request, we need
