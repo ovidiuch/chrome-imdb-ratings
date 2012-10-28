@@ -11,6 +11,12 @@ var getRatingTag = function(rating, bold) {
   });
   return tag;
 };
+var isSeries = function(row) {
+  // Since the omdb api does not return any data regarding the type of the
+  // movie, we have to search for the "(TV series)" text within the movie row
+  // to be able to tell if it is one
+  return $(row).text().indexOf('(TV series)') != -1;
+};
 var addRatingToMovieRow = function(row, callback) {
   // Select the first anchor from row which has its href containing the word
   // "title," this way confirming that it's the one linking to the movie page
@@ -33,8 +39,8 @@ var addRatingToMovieRow = function(row, callback) {
         return;
       }
       var rating = data.imdbRating;
-      // XXX only make bold if not a series
-      $(anchor).after(getRatingTag(rating, true));
+      // Only make bold if not a series
+      $(anchor).after(getRatingTag(rating, !isSeries(row)));
       callback(parseFloat(rating, 10));
     });
   });
