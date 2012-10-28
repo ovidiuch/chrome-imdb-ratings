@@ -2,6 +2,15 @@ var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
   return matches ? matches[1] : null;
 };
+var getRatingTag = function(rating, bold) {
+  var tag = $('<b></b>');
+  // Add an extra space to now be tied to the movie title or actor name
+  tag.html(' ' + rating);
+  tag.css({
+    fontWeight: bold ? 'bold' : 'normal'
+  });
+  return tag;
+};
 var addRatingToMovieRow = function(row, callback) {
   // Select the first anchor from row which has its href containing the word
   // "title," this way confirming that it's the one linking to the movie page
@@ -24,7 +33,8 @@ var addRatingToMovieRow = function(row, callback) {
         return;
       }
       var rating = data.imdbRating;
-      $(anchor).after(' ' + rating);
+      // XXX only make bold if not a series
+      $(anchor).after(getRatingTag(rating, true));
       callback(parseFloat(rating, 10));
     });
   });
@@ -56,7 +66,7 @@ $.fn.loadPageRatings = function() {
         if (!--expectedRatings) {
           var mean = (ratingSum / ratingCount).toFixed(1);
           // Add actor mean next to its name
-          $(content).find('h1.header').append(' ' + mean);
+          $(content).find('h1.header').append(getRatingTag(mean, true));
         }
       });
     });
