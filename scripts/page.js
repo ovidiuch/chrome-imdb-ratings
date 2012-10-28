@@ -4,8 +4,8 @@ var getIdFromLink = function(href) {
 };
 var getRatingTag = function(rating, bold) {
   var tag = $('<b></b>');
-  // Add an extra space to now be tied to the movie title or actor name
-  tag.html(' ' + rating);
+  // Add extra spaces to not touch with any surrounding elements
+  tag.html(' ' + rating + ' ');
   tag.css({
     fontWeight: bold ? 'bold' : 'normal'
   });
@@ -66,7 +66,15 @@ $.fn.loadPageRatings = function() {
         if (!--expectedRatings) {
           var mean = (ratingSum / ratingCount).toFixed(1);
           // Add actor mean next to its name
-          $(content).find('h1.header').append(getRatingTag(mean, true));
+          $(content).find('h1.header').each(function() {
+            var tag = getRatingTag(mean, true);
+            var span = $(this).find('span:first');
+            if (span.length) {
+              span.before(tag);
+            } else {
+              $(this).append(tag);
+            }
+          });
         }
       });
     });
