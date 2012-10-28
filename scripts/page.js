@@ -2,20 +2,35 @@ var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
   return matches ? matches[1] : null;
 };
-var getRatingTag = function(rating, bold) {
+var getRatingRange = function(rating) {
+  // Get [0,1] range from rating
+  // e.g. 1 becomes 0, 10 becomes 1
+  return ((rating - 1) * 10 / 90).toFixed(2);
+};
+var getRatingColor = function(rating) {
+  // Make N/A ratings grey
+  if (!rating) {
+    return 'gray';
+  }
+  rating = getRatingRange(rating);
+  var red = 160;
+  var green = 160;
+  if (rating < 0.5) {
+    green = (160 * rating / 0.5).toFixed(0);
+  } else if (rating > 0.5) {
+    red = 160 - (160 * (rating - 0.5) / 0.5).toFixed(0);
+  }
+  return 'rgb(' + red + ', ' + green + ', 0)';
+};
+var getRatingTag = function(rating) {
   var tag = $('<b></b>');
   // Add extra spaces to not touch with any surrounding elements
   tag.html(' ' + rating + ' ');
   tag.css({
-    fontWeight: bold ? 'bold' : 'normal'
+    fontWeight: rating >= 7 ? 'bold' : 'normal',
+    color: getRatingColor(parseFloat(rating, 10))
   });
   return tag;
-};
-var isSeries = function(row) {
-  // Since the omdb api does not return any data regarding the type of the
-  // movie, we have to search for the "(TV series)" text within the movie row
-  // to be able to tell if it is one
-  return $(row).text().indexOf('(TV series)') != -1;
 };
 var addRatingToMovieRow = function(row, callback) {
   // Select the first anchor from row which has its href containing the word
@@ -40,7 +55,7 @@ var addRatingToMovieRow = function(row, callback) {
       }
       var rating = data.imdbRating;
       // Only make bold if not a series
-      $(anchor).after(getRatingTag(rating, !isSeries(row)));
+      $(anchor).after(getRatingTag(rating));
       callback(parseFloat(rating, 10));
     });
   });
@@ -73,7 +88,7 @@ $.fn.loadPageRatings = function() {
           var mean = (ratingSum / ratingCount).toFixed(1);
           // Add actor mean next to its name
           $(content).find('h1.header').each(function() {
-            var tag = getRatingTag(mean, true);
+            var tag = getRatingTag(mean);
             var span = $(this).find('span:first');
             if (span.length) {
               span.before(tag);
