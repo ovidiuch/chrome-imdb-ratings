@@ -1,57 +1,35 @@
 // Constants
 var GOOD_MOVIE_RATING = 7;
-var GOOD_SERIES_RATING = 8;
+var GOOD_TV_RATING = 8;
 var COLOR_THRESHOLD = 160;
 
 var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
   return matches ? matches[1] : null;
 };
-var getRatingRange = function(rating) {
-  // Get [0, 1] range from rating
-  // e.g. 1 becomes 0, 10 becomes 1
-  return ((rating - 1) * 10 / 90).toFixed(2);
-};
-var getRatingColor = function(rating) {
-  // Make N/A ratings grey
-  if (!rating) {
-    return 'gray';
-  }
-  // Convert rating to range
-  rating = getRatingRange(rating);
-  // Start from max color thresholds (yellow)
-  var c = COLOR_THRESHOLD;
-  var red = c;
-  var green = c;
-  if (rating < 0.5) {
-    // Lower green for low ratings
-    green = (c * rating / 0.5).toFixed(0);
-  } else if (rating > 0.5) {
-    // Lower red for high ratings
-    red = c - (c * (rating - 0.5) / 0.5).toFixed(0);
-  }
-  return 'rgb(' + red + ', ' + green + ', 0)';
-};
 var getRatingTag = function(rating) {
   var tag = $('<span/>');
   // Add extra spaces to not touch with any surrounding elements
   tag.html(' ' + (rating ? rating : 'N/A') + ' ');
-  tag.css('color', getRatingColor(rating));
+  // No colors for now (check older commits for getRatingColor function)
+  tag.css('color', '#444');
   return tag;
 };
-var isSeries = function(row) {
+var getMovieType = function(row) {
   // Since the omdb api does not return any data regarding the type of the
-  // movie, we have to search for the "(TV series)" text within the movie row
-  // to be able to tell if it is one
-  return $(row).text().indexOf('(TV series)') != -1;
-};
+  // movie (documentary, tv series, etc.), we have to search for all sort of
+  // info within the movie row detect its type
+  var matches = $(row).text().match(/\((.+?)\)/);
+  return matches ? matches[1] : 'Film';
+}
 var isGoodMovie = function(row, rating) {
-  return rating >= (isSeries(row) ? GOOD_SERIES_RATING : GOOD_MOVIE_RATING);
+  var type = getMovieType(row);
+  if (type == 'Video Game') {
+    return false;
+  }
+  return rating >= (type == 'Film' ? GOOD_MOVIE_RATING : GOOD_TV_RATING);
 };
 var addRatingToMovieRow = function(row, callback) {
-  // Make row have a normal font weight, that will be turned back to bold
-  // after its rating has been fetched and it has proved to be great
-  $(row).find('b').css('font-weight', 'normal');
   // Select the first anchor from row which has its href containing the word
   // "title," this way confirming that it's the one linking to the movie page
   // (in case the markup changes in the future). We want the anchor with the
@@ -75,11 +53,8 @@ var addRatingToMovieRow = function(row, callback) {
       var rating = parseFloat(data.imdbRating, 10);
       // Insert rating tag after name anchor
       $(anchor).after(getRatingTag(rating));
-      // Only make bold again if movie has good rating
-      // XXX should never make bold video games or other side stuff
-      if (isGoodMovie(row, rating)) {
-        $(row).find('b').css('font-weight', 'bold');
-      }
+      // Make not important stuff opaque
+      $(row).css('opacity', isGoodMovie(row, rating) ? 1 : 0.6);
       callback(rating);
     });
   });
