@@ -30,6 +30,11 @@ var isGoodMovie = function(row, rating) {
   return rating >= (type == 'Film' ? GOOD_MOVIE_RATING : GOOD_TV_RATING);
 };
 var addRatingToMovieRow = function(row, callback) {
+  // Make sure you don't load the same ratings more times
+  if ($(row).hasClass('with-rating')) {
+    callback(null);
+    return;
+  }
   // Select the first anchor from row which has its href containing the word
   // "title," this way confirming that it's the one linking to the movie page
   // (in case the markup changes in the future). We want the anchor with the
@@ -58,12 +63,12 @@ var addRatingToMovieRow = function(row, callback) {
       callback(rating);
     });
   });
+  // Mark this section as having ratings loaded
+  $(row).addClass('with-rating');
 };
-$.fn.loadPageRatings = function() {
-  $(this).each(function(i, content) {
-    // Only target main filmography section for both having a more relevant
-    // actor average and making fewer requests
-    var rows = $(this).find('#filmography').children().eq(1).find('.filmo-row');
+$.fn.loadSectionRatings = function(callback) {
+  $(this).each(function(i, section) {
+    var rows = $(this).find('.filmo-row');
     var ratingSum = 0;
     var ratingCount = 0;
     // Since gathering each rating requires an asynchronous request, we need
@@ -73,7 +78,6 @@ $.fn.loadPageRatings = function() {
     rows.each(function() {
       // Send a callback for each movie in order to collect all rating from
       // this page and generate a mean for the featured actor
-      // XXX what other listing are there besides actor pages?
       addRatingToMovieRow(this, function(rating) {
         // Only add rating to list if it's a valid number, otherwise just
         // decrement the expected ratings count and ignore the value
@@ -82,20 +86,40 @@ $.fn.loadPageRatings = function() {
           ratingCount++;
         }
         // When a rating (be it N/A) for each movie has been returned, calculate
-        // and display average score of actor
+        // average rating and fire callback with it, if one is received
         if (!--expectedRatings) {
           var mean = (ratingSum / ratingCount).toFixed(1);
-          // Add actor mean next to its name
-          $(content).find('h1.header').each(function() {
-            var tag = getRatingTag(mean);
-            var span = $(this).find('span:first');
-            if (span.length) {
-              span.before(tag);
-            } else {
-              $(this).append(tag);
-            }
-          });
+          if (typeof(callback) == 'function') {
+            callback(mean);
+          }
         }
+      });
+    });
+  });
+};
+$.fn.loadPageRatings = function() {
+  $(this).each(function(i, content) {
+    var sections = $(this).find('#filmography').children(':odd');
+    // Only target the visible filmography section for both having a more
+    // relevant actor average and making fewer requests (at first). Show
+    // average rating of person based on this (main) section
+    sections.first(':visible').loadSectionRatings(function(rating) {
+      // Add person rating next to its name
+      $(content).find('h1.header').each(function() {
+        var tag = getRatingTag(rating);
+        var span = $(this).find('span:first');
+        if (span.length) {
+          span.before(tag);
+        } else {
+          $(this).append(tag);
+        }
+      });
+    });
+    // Add click handlers for all remaining sections, in order for them to load
+    // as soon as they are toggled visible
+    sections.filter(':hidden').each(function(i) {
+      $(this).prev().click(function() {
+        $(this).next().loadSectionRatings();
       });
     });
   });
