@@ -1,9 +1,14 @@
+// Constants
+var GOOD_MOVIE_RATING = 7;
+var GOOD_SERIES_RATING = 8;
+var COLOR_THRESHOLD = 160;
+
 var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
   return matches ? matches[1] : null;
 };
 var getRatingRange = function(rating) {
-  // Get [0,1] range from rating
+  // Get [0, 1] range from rating
   // e.g. 1 becomes 0, 10 becomes 1
   return ((rating - 1) * 10 / 90).toFixed(2);
 };
@@ -12,25 +17,36 @@ var getRatingColor = function(rating) {
   if (!rating) {
     return 'gray';
   }
+  // Convert rating to range
   rating = getRatingRange(rating);
-  var red = 160;
-  var green = 160;
+  // Start from max color thresholds (yellow)
+  var c = COLOR_THRESHOLD;
+  var red = c;
+  var green = c;
   if (rating < 0.5) {
-    green = (160 * rating / 0.5).toFixed(0);
+    // Lower green for low ratings
+    green = (c * rating / 0.5).toFixed(0);
   } else if (rating > 0.5) {
-    red = 160 - (160 * (rating - 0.5) / 0.5).toFixed(0);
+    // Lower red for high ratings
+    red = c - (c * (rating - 0.5) / 0.5).toFixed(0);
   }
   return 'rgb(' + red + ', ' + green + ', 0)';
 };
 var getRatingTag = function(rating) {
-  var tag = $('<b></b>');
+  var tag = $('<span/>');
   // Add extra spaces to not touch with any surrounding elements
-  tag.html(' ' + rating + ' ');
-  tag.css({
-    fontWeight: rating >= 7 ? 'bold' : 'normal',
-    color: getRatingColor(parseFloat(rating, 10))
-  });
+  tag.html(' ' + (rating ? rating : 'N/A') + ' ');
+  tag.css('color', getRatingColor(rating));
   return tag;
+};
+var isSeries = function(row) {
+  // Since the omdb api does not return any data regarding the type of the
+  // movie, we have to search for the "(TV series)" text within the movie row
+  // to be able to tell if it is one
+  return $(row).text().indexOf('(TV series)') != -1;
+};
+var isGoodMovie = function(row, rating) {
+  return rating >= (isSeries(row) ? GOOD_SERIES_RATING : GOOD_MOVIE_RATING);
 };
 var addRatingToMovieRow = function(row, callback) {
   // Select the first anchor from row which has its href containing the word
@@ -38,6 +54,9 @@ var addRatingToMovieRow = function(row, callback) {
   // (in case the markup changes in the future). We want the anchor with the
   // link to the movie page because it contains the movie id
   $(row).find('a[href*=title]:first').each(function(i, anchor) {
+    // Make row have a normal font weight, that will be turned back to bold
+    // after its rating has been fetched and it has proved to be great
+    $(row).find('b').css('font-weight', 'normal');
     var id = getIdFromLink(this.href);
     // Bail out if no id could be extracted from the anchor's href
     if (!id) {
@@ -53,10 +72,15 @@ var addRatingToMovieRow = function(row, callback) {
         callback(null);
         return;
       }
-      var rating = data.imdbRating;
-      // Only make bold if not a series
+      var rating = parseFloat(data.imdbRating, 10);
+      // Insert rating tag after name anchor
       $(anchor).after(getRatingTag(rating));
-      callback(parseFloat(rating, 10));
+      // Only make bold again if movie has good rating
+      // XXX should never make bold video games or other side stuff
+      if (isGoodMovie(row, rating)) {
+        $(row).find('b').css('font-weight', 'bold');
+      }
+      callback(rating);
     });
   });
 };
