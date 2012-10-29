@@ -49,14 +49,14 @@ var isGoodMovie = function(row, rating) {
   return rating >= (isSeries(row) ? GOOD_SERIES_RATING : GOOD_MOVIE_RATING);
 };
 var addRatingToMovieRow = function(row, callback) {
+  // Make row have a normal font weight, that will be turned back to bold
+  // after its rating has been fetched and it has proved to be great
+  $(row).find('b').css('font-weight', 'normal');
   // Select the first anchor from row which has its href containing the word
   // "title," this way confirming that it's the one linking to the movie page
   // (in case the markup changes in the future). We want the anchor with the
   // link to the movie page because it contains the movie id
   $(row).find('a[href*=title]:first').each(function(i, anchor) {
-    // Make row have a normal font weight, that will be turned back to bold
-    // after its rating has been fetched and it has proved to be great
-    $(row).find('b').css('font-weight', 'normal');
     var id = getIdFromLink(this.href);
     // Bail out if no id could be extracted from the anchor's href
     if (!id) {
