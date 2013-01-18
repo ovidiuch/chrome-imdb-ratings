@@ -11,7 +11,7 @@ var getIdFromLink = function(href) {
 var getRatingTag = function(rating) {
   var tag = $('<span/>');
   // Add extra spaces to not touch with any surrounding elements
-  tag.html(' ' + (rating ? rating : 'N/A') + ' ');
+  tag.html(' (' + (rating ? rating.toFixed(1) : 'N/A') + ') ');
   // No colors for now (check older commits for getRatingColor function)
   tag.css('color', '#444');
   return tag;
