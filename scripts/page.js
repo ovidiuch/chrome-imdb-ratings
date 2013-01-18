@@ -2,7 +2,7 @@
 var BAD_MOVIE_RATING = 4;
 var GOOD_MOVIE_RATING = 7.8;
 var TV_RATING_OFFSET = 1;
-var VIDEO_GAME_RATING = 10;
+var VIDEO_GAME_OFFSET = 1.4;
 
 var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
@@ -11,7 +11,7 @@ var getIdFromLink = function(href) {
 var getRatingTag = function(rating) {
   var tag = $('<span/>');
   // Add extra spaces to not touch with any surrounding elements
-  tag.html(' (' + (rating ? rating.toFixed(1) : 'N/A') + ') ');
+  tag.html(' (' + (rating ? (typeof rating != 'number' ? rating : rating.toFixed(1)) : 'N/A') + ') ');
   // No colors for now (check older commits for getRatingColor function)
   tag.css('color', '#444');
   return tag;
@@ -20,13 +20,16 @@ var getMovieType = function(row) {
   // Since the omdb api does not return any data regarding the type of the
   // movie (documentary, tv series, etc.), we have to search for all sort of
   // info within the movie row detect its type
-  var matches = $(row).text().match(/\((.+?)\)/);
+
+  // Regex checks for (rating)(type) and captures only the (type)
+  // [\s]* is needed in between rating and type to match whitespace/newline
+  var matches = $(row).text().match(/\([^\)]+\)[\s]*\(([^\)]+)\)/);
   return matches ? matches[1] : 'Film';
 };
 var getStandardizedRating = function(row, rating){
   var type = getMovieType(row);
   if (type == 'Video Game') {
-    return VIDEO_GAME_RATING;
+    return rating-VIDEO_GAME_OFFSET;
   }
   return (type == 'Film' ? rating : rating-TV_RATING_OFFSET);
 };
