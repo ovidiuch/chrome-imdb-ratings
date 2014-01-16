@@ -1,7 +1,8 @@
 // Constants
-var GOOD_MOVIE_RATING = 7;
-var GOOD_TV_RATING = 8;
-var COLOR_THRESHOLD = 160;
+var BAD_MOVIE_RATING = 4;
+var GOOD_MOVIE_RATING = 7.8;
+var TV_RATING_OFFSET = 1;
+var VIDEO_GAME_OFFSET = 1.4;
 
 var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
@@ -10,7 +11,7 @@ var getIdFromLink = function(href) {
 var getRatingTag = function(rating) {
   var tag = $('<span/>');
   // Add extra spaces to not touch with any surrounding elements
-  tag.html(' ' + (rating ? rating : 'N/A') + ' ');
+  tag.html(' (' + (rating ? (typeof rating != 'number' ? rating : rating.toFixed(1)) : 'N/A') + ') ');
   // No colors for now (check older commits for getRatingColor function)
   tag.css('color', '#444');
   return tag;
@@ -19,16 +20,31 @@ var getMovieType = function(row) {
   // Since the omdb api does not return any data regarding the type of the
   // movie (documentary, tv series, etc.), we have to search for all sort of
   // info within the movie row detect its type
-  var matches = $(row).text().match(/\((.+?)\)/);
+
+  // Regex checks for (rating)(type) and captures only the (type)
+  // [\s]* is needed in between rating and type to match whitespace/newline
+  var matches = $(row).text().match(/\([^\)]+\)[\s]*\(([^\)]+)\)/);
   return matches ? matches[1] : 'Film';
-}
-var isGoodMovie = function(row, rating) {
+};
+var getStandardizedRating = function(row, rating){
   var type = getMovieType(row);
   if (type == 'Video Game') {
-    return false;
+    return rating-VIDEO_GAME_OFFSET;
   }
-  return rating >= (type == 'Film' ? GOOD_MOVIE_RATING : GOOD_TV_RATING);
+  return (type == 'Film' ? rating : rating-TV_RATING_OFFSET);
 };
+// Creates a linear fade between startout and endout values.
+// E.g. produce a fade clamped between transparent and
+// opaque with between ratings start and end.
+var getFadeVal = function(start,startout,end,endout,input){
+  var m=(startout-endout)/(start-end);
+  var c = startout-(start*m);
+  var max = Math.max(startout,endout);
+  var min = Math.min(startout,endout);
+  return Math.max(min,Math.min(max,m*input+c));
+};
+var getMovieOpacity = function(input) { return getFadeVal(BAD_MOVIE_RATING,0.4,GOOD_MOVIE_RATING,1,input) };
+var getMovieColor   = function(input) { return getFadeVal(BAD_MOVIE_RATING,32,GOOD_MOVIE_RATING,10,input) };
 var addRatingToMovieRow = function(row, callback) {
   // Make sure you don't load the same ratings more times
   if ($(row).hasClass('with-rating')) {
@@ -58,8 +74,10 @@ var addRatingToMovieRow = function(row, callback) {
       var rating = parseFloat(data.imdbRating, 10);
       // Insert rating tag after name anchor
       $(anchor).after(getRatingTag(rating));
-      // Make not important stuff opaque
-      $(row).css('opacity', isGoodMovie(row, rating) ? 1 : 0.6);
+      // Make not important stuff opaque, with darker color
+      var sRating = getStandardizedRating(row, rating);
+      $(row).css('opacity', getMovieOpacity(sRating));
+      $('a:link, a:hover',row).css('color', 'hsl(206,81%,'+getMovieColor(sRating)+'%)');
       callback(rating);
     });
   });
