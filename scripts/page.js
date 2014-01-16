@@ -33,14 +33,21 @@ var getMovieType = function(row) {
   // Regex checks for (rating)(type) and captures only the (type)
   // [\s]* is needed in between rating and type to match whitespace/newline
   var matches = $(row).text().match(/\([^\)]+\)[\s]*\(([^\)]+)\)/);
-  return matches ? matches[1] : 'Film';
+  return matches ? matches[1] : null;
 };
 var getStandardizedRating = function(row, rating){
   var type = getMovieType(row);
-  if (type == 'Video Game') {
-    return rating-RATING_HANDICAP_PER_TYPE['Video Game'];
+  if (type) {
+    if (RATING_HANDICAP_PER_TYPE.hasOwnProperty(type)) {
+      return rating - RATING_HANDICAP_PER_TYPE[type];
+    } else {
+      return rating - RATING_HANDICAP_PER_TYPE.UNKNOWN;
+    }
+  } else {
+    // The known imdb behavior is that entities w/out a specified type are
+    // movies
+    return rating;
   }
-  return (type == 'Film' ? rating : rating-RATING_HANDICAP_PER_TYPE['TV Series']);
 };
 // Creates a linear fade between startout and endout values.
 // E.g. produce a fade clamped between transparent and
