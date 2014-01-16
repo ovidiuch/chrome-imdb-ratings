@@ -35,7 +35,7 @@ var getMovieType = function(row) {
   var matches = $(row).text().match(/\([^\)]+\)[\s]*\(([^\)]+)\)/);
   return matches ? matches[1] : null;
 };
-var getStandardizedRating = function(row, rating){
+var getStandardizedRating = function(row, rating) {
   var type = getMovieType(row);
   if (type) {
     if (RATING_HANDICAP_PER_TYPE.hasOwnProperty(type)) {
@@ -52,15 +52,19 @@ var getStandardizedRating = function(row, rating){
 // Creates a linear fade between startout and endout values.
 // E.g. produce a fade clamped between transparent and
 // opaque with between ratings start and end.
-var getFadeVal = function(start,startout,end,endout,input){
-  var m=(startout-endout)/(start-end);
-  var c = startout-(start*m);
-  var max = Math.max(startout,endout);
-  var min = Math.min(startout,endout);
-  return Math.max(min,Math.min(max,m*input+c));
+var getFadeVal = function(start, startout, end, endout, input) {
+  var m = (startout - endout) / (start - end);
+  var c = startout - (start * m);
+  var max = Math.max(startout, endout);
+  var min = Math.min(startout, endout);
+  return Math.max(min, Math.min(max, m * input + c));
 };
-var getMovieOpacity = function(input) { return getFadeVal(RATING_GRADES.BAD,0.4,RATING_GRADES.GOOD,1,input) };
-var getMovieColor   = function(input) { return getFadeVal(RATING_GRADES.BAD,32,RATING_GRADES.GOOD,10,input) };
+var getMovieOpacity = function(input) {
+  return getFadeVal(RATING_GRADES.BAD, 0.4, RATING_GRADES.GOOD, 1, input);
+};
+var getMovieColor = function(input) {
+  return getFadeVal(RATING_GRADES.BAD, 32, RATING_GRADES.GOOD, 10, input);
+};
 var addRatingToMovieRow = function(row, callback) {
   // Make sure you don't load the same ratings more times
   if ($(row).hasClass('with-rating')) {
@@ -93,7 +97,7 @@ var addRatingToMovieRow = function(row, callback) {
       // Make not important stuff opaque, with darker color
       var sRating = isNaN(rating) ? RATING_GRADES.BAD : getStandardizedRating(row, rating);
       $(row).css('opacity', getMovieOpacity(sRating));
-      $('a:link, a:hover',row).css('color', 'hsl(206,81%,'+getMovieColor(sRating)+'%)');
+      $('a:link, a:hover', row).css('color', 'hsl(206,81%,' + getMovieColor(sRating) + '%)');
       callback(rating);
     });
   });
