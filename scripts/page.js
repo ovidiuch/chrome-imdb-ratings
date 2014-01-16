@@ -84,7 +84,7 @@ var addRatingToMovieRow = function(row, callback) {
       // Insert rating tag after name anchor
       $(anchor).after(getRatingTag(rating));
       // Make not important stuff opaque, with darker color
-      var sRating = getStandardizedRating(row, rating);
+      var sRating = isNaN(rating) ? RATING_GRADES.BAD : getStandardizedRating(row, rating);
       $(row).css('opacity', getMovieOpacity(sRating));
       $('a:link, a:hover',row).css('color', 'hsl(206,81%,'+getMovieColor(sRating)+'%)');
       callback(rating);
