@@ -1,8 +1,17 @@
-// Constants
-var BAD_MOVIE_RATING = 4;
-var GOOD_MOVIE_RATING = 7.8;
-var TV_RATING_OFFSET = 1;
-var VIDEO_GAME_OFFSET = 1.4;
+// We highlight entries gradually between BAD and GOOD ratings. Anything below
+// has the MIN opacity/color and above has the MAX ones
+var RATING_GRADES = {
+  BAD: 4,
+  GOOD: 7.8
+};
+
+// Certain media types like TV Shows or Video Games have higher ratings on
+// average and we grade them more strictly
+var RATING_HANDICAP_PER_TYPE = {
+  'TV Series': 1,
+  'Video Game': 1.4,
+  UNKNOWN: 2
+};
 
 var getIdFromLink = function(href) {
   var matches = href.match(/title\/([a-z0-9]+)/i);
@@ -29,9 +38,9 @@ var getMovieType = function(row) {
 var getStandardizedRating = function(row, rating){
   var type = getMovieType(row);
   if (type == 'Video Game') {
-    return rating-VIDEO_GAME_OFFSET;
+    return rating-RATING_HANDICAP_PER_TYPE['Video Game'];
   }
-  return (type == 'Film' ? rating : rating-TV_RATING_OFFSET);
+  return (type == 'Film' ? rating : rating-RATING_HANDICAP_PER_TYPE['TV Series']);
 };
 // Creates a linear fade between startout and endout values.
 // E.g. produce a fade clamped between transparent and
@@ -43,8 +52,8 @@ var getFadeVal = function(start,startout,end,endout,input){
   var min = Math.min(startout,endout);
   return Math.max(min,Math.min(max,m*input+c));
 };
-var getMovieOpacity = function(input) { return getFadeVal(BAD_MOVIE_RATING,0.4,GOOD_MOVIE_RATING,1,input) };
-var getMovieColor   = function(input) { return getFadeVal(BAD_MOVIE_RATING,32,GOOD_MOVIE_RATING,10,input) };
+var getMovieOpacity = function(input) { return getFadeVal(RATING_GRADES.BAD,0.4,RATING_GRADES.GOOD,1,input) };
+var getMovieColor   = function(input) { return getFadeVal(RATING_GRADES.BAD,32,RATING_GRADES.GOOD,10,input) };
 var addRatingToMovieRow = function(row, callback) {
   // Make sure you don't load the same ratings more times
   if ($(row).hasClass('with-rating')) {
